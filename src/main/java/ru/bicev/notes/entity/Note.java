@@ -57,4 +57,17 @@ public class Note {
         Collections.addAll(this.tags, tags);
     }
 
+    public void removeTag(String tag) {
+        this.tags.removeIf(existingTag -> existingTag.equalsIgnoreCase(tag));
+    }
+
+    public void removeAllTags() {
+        tags.clear();
+    }
+
+    public boolean containsTag(String tag) {
+        return this.tags.stream()
+                .anyMatch(existingTag -> existingTag.equalsIgnoreCase(tag));
+    }
+
 }
