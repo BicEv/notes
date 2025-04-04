@@ -8,26 +8,30 @@ import ru.bicev.notes.entity.Note;
 import ru.bicev.notes.entity.User;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface NoteRepository extends JpaRepository<Note, Long> {
 
     List<Note> findByUser(User user);
 
-    @Query("SELECT n FROM Note n JOIN n.tags t WHERE t = :tag")
-    List<Note> findByTag(@Param("tag") String tag);
+    Optional<Note> findByIdAndUser(Long id, User user);
 
-    @Query("SELECT n FROM Note n JOIN n.tags t WHERE t LIKE %:tagPart%")
-    List<Note> findByTagPart(@Param("tagPart") String tagPart);
+    @Query("SELECT n FROM Note n JOIN n.tags t WHERE t = :tag AND n.user = :user")
+    List<Note> findByTag(@Param("tag") String tag, @Param("user") User user);
 
-    @Query("SELECT DISTINCT n FROM Note n JOIN n.tags t WHERE t IN :tags")
-    List<Note> findByAnyTags(@Param("tags") List<String> tags);
+    @Query("SELECT n FROM Note n JOIN n.tags t WHERE t LIKE %:tagPart% AND n.user = :user")
+    List<Note> findByTagPart(@Param("tagPart") String tagPart, @Param("user") User user);
+
+    @Query("SELECT DISTINCT n FROM Note n JOIN n.tags t WHERE t IN :tags AND n.user = :user")
+    List<Note> findByAnyTags(@Param("tags") List<String> tags, @Param("user") User user);
 
     @Query("""
                 SELECT n FROM Note n JOIN n.tags t
-                WHERE t IN :tags
+                WHERE t IN :tags AND n.user = :user
                 GROUP BY n
                 HAVING COUNT(DISTINCT t) = :tagCount
             """)
-    List<Note> findByAllTags(@Param("tags") List<String> tags, @Param("tagCount") long tagCount);
+    List<Note> findByAllTags(@Param("tags") List<String> tags, @Param("tagCount") long tagCount,
+            @Param("user") User user);
 
 }
