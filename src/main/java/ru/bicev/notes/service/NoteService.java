@@ -12,6 +12,8 @@ public interface NoteService {
 
     void deleteNote(Long noteId, String email);
 
+    NoteDto addTag(Long noteId, String tag);
+
     List<NoteDto> findByUser(String email);
 
     List<NoteDto> findByTag(String tag, String email);

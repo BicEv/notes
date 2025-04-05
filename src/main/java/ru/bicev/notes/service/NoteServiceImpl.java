@@ -71,6 +71,19 @@ public class NoteServiceImpl implements NoteService {
         return NoteMapper.toDto(editedNote);
     }
 
+    @Transactional
+    @Override
+    public NoteDto addTag(Long noteId, String tag) {
+        Note foundNote = noteRepository.findById(noteId).orElseThrow(() -> {
+            logger.warn("Note with id: {} was not found", noteId);
+            return new NoteNotFoundException("Note was not found");
+        });
+        foundNote.addTag(tag);
+        Note savedNote = noteRepository.save(foundNote);
+        logger.info("Adding tag: {} to a note: {}", tag, noteId);
+        return NoteMapper.toDto(savedNote);
+    }
+
     @Transactional(readOnly = true)
     @Override
     public List<NoteDto> findByAllTags(List<String> tags, String email) {
