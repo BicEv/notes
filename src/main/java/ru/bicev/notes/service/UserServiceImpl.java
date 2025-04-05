@@ -44,6 +44,7 @@ public class UserServiceImpl implements UserService {
             logger.warn("User with email: {} was not found", email);
             return new UserNotFoundException("User not found");
         });
+        logger.info("Checked user with email: {}", email);
         return passwordEncoder.matches(password, foundUser.getPassword());
 
     }
@@ -54,6 +55,7 @@ public class UserServiceImpl implements UserService {
             logger.warn("User with email: {} was not found", email);
             return new UserNotFoundException("User not found");
         });
+        logger.info("Searched for user with email: {}", email);
         return UserMapper.toDto(foundUser);
     }
 
