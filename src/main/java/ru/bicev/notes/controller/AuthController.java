@@ -42,7 +42,7 @@ public class AuthController {
     public ResponseEntity<String> login(@RequestParam String email, @RequestParam String password) {
         authManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
 
-        String token = jwtService.generateToket(email);
+        String token = jwtService.generateToken(email);
         return ResponseEntity.ok(token);
     }
 

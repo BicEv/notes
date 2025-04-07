@@ -25,7 +25,7 @@ public class JwtService {
         this.secretKey = secretKey;
     }
 
-    public String generateToket(String email) {
+    public String generateToken(String email) {
         Instant now = Instant.now();
         return Jwts.builder()
                 .subject(email)
