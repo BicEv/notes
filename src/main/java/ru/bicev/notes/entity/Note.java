@@ -45,20 +45,14 @@ public class Note {
         this.text = text;
     }
 
-    public void addTag(String tag) {
-        this.tags.add(tag);
-    }
-
-    public void addTags(List<String> tags) {
-        this.tags.addAll(tags);
-    }
-
     public void addTags(String... tags) {
         Collections.addAll(this.tags, tags);
     }
 
-    public void removeTag(String tag) {
-        this.tags.removeIf(existingTag -> existingTag.equalsIgnoreCase(tag));
+    public void removeTags(String... tags) {
+        for (String tag : tags) {
+            this.tags.remove(tags);
+        }
     }
 
     public void removeAllTags() {
