@@ -12,11 +12,11 @@ public interface NoteService {
 
     void deleteNote(Long noteId, String email);
 
-    NoteDto addTag(Long noteId, String tag);
+    NoteDto addTags(Long noteId, String email, String... tags);
+
+    NoteDto removeTags(Long noteId, String email, String... tags);
 
     List<NoteDto> findByUser(String email);
-
-    List<NoteDto> findByTag(String tag, String email);
 
     List<NoteDto> findByTagPart(String tagPart, String email);
 

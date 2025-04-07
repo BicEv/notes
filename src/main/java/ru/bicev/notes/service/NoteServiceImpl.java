@@ -1,5 +1,7 @@
 package ru.bicev.notes.service;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -12,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.bicev.notes.dto.NoteDto;
 import ru.bicev.notes.entity.Note;
 import ru.bicev.notes.entity.User;
-import ru.bicev.notes.exception.AccessDeniedException;
 import ru.bicev.notes.exception.NoteNotFoundException;
 import ru.bicev.notes.exception.UserNotFoundException;
 import ru.bicev.notes.util.NoteMapper;
@@ -47,23 +48,15 @@ public class NoteServiceImpl implements NoteService {
     @Transactional
     @Override
     public void deleteNote(Long noteId, String email) {
-        Note foundNote = noteRepository.findById(noteId).orElseThrow(() -> {
-            logger.warn("Note with id: {} was not found", noteId);
-            return new NoteNotFoundException("Note was not found");
-        });
-        validateUserAccess(email, foundNote);
-        noteRepository.deleteById(noteId);
+        Note foundNote = getNoteByIdAndUser(noteId, getCurrentUser(email));
+        noteRepository.delete(foundNote);
         logger.info("Note deleted: id={}, user={}", noteId, email);
     }
 
     @Transactional
     @Override
     public NoteDto editNote(Long noteId, NoteDto noteDto, String email) {
-        Note foundNote = noteRepository.findById(noteId).orElseThrow(() -> {
-            logger.warn("Note with id: {} was not found", noteId);
-            return new NoteNotFoundException("Note was not found");
-        });
-        validateUserAccess(email, foundNote);
+        Note foundNote = getNoteByIdAndUser(noteId, getCurrentUser(email));
         foundNote.setText(noteDto.getText());
         foundNote.setTags(noteDto.getTags());
         Note editedNote = noteRepository.save(foundNote);
@@ -73,15 +66,33 @@ public class NoteServiceImpl implements NoteService {
 
     @Transactional
     @Override
-    public NoteDto addTag(Long noteId, String tag) {
-        Note foundNote = noteRepository.findById(noteId).orElseThrow(() -> {
-            logger.warn("Note with id: {} was not found", noteId);
-            return new NoteNotFoundException("Note was not found");
-        });
-        foundNote.addTag(tag);
+    public NoteDto addTags(Long noteId, String email, String... tags) {
+        Note foundNote = getNoteByIdAndUser(noteId, getCurrentUser(email));
+        if (tags == null || tags.length == 0) {
+            logger.warn("No tags provided to add/remove for note with id: {}", noteId);
+            return NoteMapper.toDto(foundNote);
+        }
+        String[] upperTags = Arrays.stream(tags).map(String::toUpperCase).toArray(String[]::new);
+        foundNote.addTags(upperTags);
         Note savedNote = noteRepository.save(foundNote);
-        logger.info("Adding tag: {} to a note: {}", tag, noteId);
+        logger.info("Added {} tags: {} to note with id: {}", tags.length, Arrays.toString(tags), noteId);
         return NoteMapper.toDto(savedNote);
+    }
+
+    @Transactional
+    @Override
+    public NoteDto removeTags(Long noteId, String email, String... tags) {
+        Note foundNote = getNoteByIdAndUser(noteId, getCurrentUser(email));
+        if (tags == null || tags.length == 0) {
+            logger.warn("No tags provided to add/remove for note with id: {}", noteId);
+            return NoteMapper.toDto(foundNote);
+        }
+        String[] upperTags = Arrays.stream(tags).map(String::toUpperCase).toArray(String[]::new);
+        foundNote.removeTags(upperTags);
+        Note savedNote = noteRepository.save(foundNote);
+        logger.info("Removed {} tags: {} to note with id: {}", tags.length, Arrays.toString(tags), noteId);
+        return NoteMapper.toDto(savedNote);
+
     }
 
     @Transactional(readOnly = true)
@@ -94,20 +105,9 @@ public class NoteServiceImpl implements NoteService {
     @Transactional(readOnly = true)
     @Override
     public NoteDto findByIdAndUser(Long noteId, String email) {
-        User currentUser = getCurrentUser(email);
-        Note foundNote = noteRepository.findByIdAndUser(noteId, currentUser).orElseThrow(() -> {
-            logger.warn("Note with id: {} was not found", noteId);
-            return new NoteNotFoundException("Note was not found");
-        });
+        Note foundNote = getNoteByIdAndUser(noteId, getCurrentUser(email));
         logger.info("Searched note with id: {} and user={}", noteId, email);
         return NoteMapper.toDto(foundNote);
-    }
-
-    @Transactional(readOnly = true)
-    @Override
-    public List<NoteDto> findByTag(String tag, String email) {
-        logger.info("Searched notes with tag: {} for user={}", tag, email);
-        return findNotes(user -> noteRepository.findByTag(tag, user), email);
     }
 
     @Transactional(readOnly = true)
@@ -129,11 +129,22 @@ public class NoteServiceImpl implements NoteService {
     public List<String> getAllTags(String email) {
         User currentUser = getCurrentUser(email);
         List<Note> notes = noteRepository.findByUser(currentUser);
+        if (notes.isEmpty()) {
+            logger.info("No notes found for user={}", email);
+            return Collections.emptyList();
+        }
         logger.info("Searched tags for user={}", email);
         return notes.stream()
                 .flatMap(note -> note.getTags().stream())
                 .distinct()
                 .collect(Collectors.toList());
+    }
+
+    private Note getNoteByIdAndUser(Long noteId, User user) {
+        return noteRepository.findByIdAndUser(noteId, user).orElseThrow(() -> {
+            logger.warn("Note with id: {} was not found", noteId);
+            return new NoteNotFoundException("Note was not found");
+        });
     }
 
     private User getCurrentUser(String email) {
@@ -146,13 +157,6 @@ public class NoteServiceImpl implements NoteService {
     private List<NoteDto> findNotes(Function<User, List<Note>> findFunction, String email) {
         User currentUser = getCurrentUser(email);
         return NoteMapper.toDtoList(findFunction.apply(currentUser));
-    }
-
-    private void validateUserAccess(String email, Note note) {
-        if (!note.getUser().getEmail().equals(email)) {
-            logger.warn("Accessing note by email: {} with email: {}", note.getUser().getEmail(), email);
-            throw new AccessDeniedException("Access denied");
-        }
     }
 
 }
