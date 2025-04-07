@@ -15,10 +15,7 @@ public interface NoteRepository extends JpaRepository<Note, Long> {
     List<Note> findByUser(User user);
 
     Optional<Note> findByIdAndUser(Long id, User user);
-
-    @Query("SELECT n FROM Note n JOIN n.tags t WHERE t = :tag AND n.user = :user")
-    List<Note> findByTag(@Param("tag") String tag, @Param("user") User user);
-
+    
     @Query("SELECT n FROM Note n JOIN n.tags t WHERE t LIKE %:tagPart% AND n.user = :user")
     List<Note> findByTagPart(@Param("tagPart") String tagPart, @Param("user") User user);
 
