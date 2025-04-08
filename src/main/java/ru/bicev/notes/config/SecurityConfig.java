@@ -18,9 +18,9 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import ru.bicev.notes.security.JwtFilter;
-import ru.bicev.repository.UserRepository;
 import ru.bicev.notes.entity.User;
 import ru.bicev.notes.exception.UserNotFoundException;
+import ru.bicev.notes.repository.UserRepository;
 
 @Configuration
 @EnableWebSecurity

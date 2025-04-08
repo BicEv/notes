@@ -16,9 +16,9 @@ import ru.bicev.notes.entity.Note;
 import ru.bicev.notes.entity.User;
 import ru.bicev.notes.exception.NoteNotFoundException;
 import ru.bicev.notes.exception.UserNotFoundException;
+import ru.bicev.notes.repository.NoteRepository;
+import ru.bicev.notes.repository.UserRepository;
 import ru.bicev.notes.util.NoteMapper;
-import ru.bicev.repository.NoteRepository;
-import ru.bicev.repository.UserRepository;
 
 @Service
 public class NoteServiceImpl implements NoteService {

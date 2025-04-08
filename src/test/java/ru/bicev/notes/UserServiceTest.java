@@ -23,8 +23,8 @@ import ru.bicev.notes.dto.UserDto;
 import ru.bicev.notes.entity.User;
 import ru.bicev.notes.exception.DuplicateUserException;
 import ru.bicev.notes.exception.UserNotFoundException;
+import ru.bicev.notes.repository.UserRepository;
 import ru.bicev.notes.service.UserServiceImpl;
-import ru.bicev.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {

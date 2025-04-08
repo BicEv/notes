@@ -9,8 +9,8 @@ import ru.bicev.notes.dto.UserDto;
 import ru.bicev.notes.entity.User;
 import ru.bicev.notes.exception.DuplicateUserException;
 import ru.bicev.notes.exception.UserNotFoundException;
+import ru.bicev.notes.repository.UserRepository;
 import ru.bicev.notes.util.UserMapper;
-import ru.bicev.repository.UserRepository;
 
 @Service
 public class UserServiceImpl implements UserService {
