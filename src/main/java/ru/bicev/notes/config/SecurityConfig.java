@@ -1,4 +1,4 @@
-package ru.bicev.config;
+package ru.bicev.notes.config;
 
 import java.util.Collections;
 
