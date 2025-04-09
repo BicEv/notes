@@ -61,7 +61,7 @@ public class UserServiceTest {
     }
 
     @Test
-    public void registerUser_DuplicateUser() {
+    public void registerUser_DuplicateUserException() {
         when(userRepository.findByEmail("test@email.com")).thenReturn(Optional.of(user));
 
         assertThrows(DuplicateUserException.class,
