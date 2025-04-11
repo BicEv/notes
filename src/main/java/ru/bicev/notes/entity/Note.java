@@ -51,7 +51,7 @@ public class Note {
 
     public void removeTags(String... tags) {
         for (String tag : tags) {
-            this.tags.remove(tags);
+            this.tags.remove(tag);
         }
     }
 
