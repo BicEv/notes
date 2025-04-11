@@ -17,9 +17,9 @@ public class NoteDto {
 
     private Long id;
 
-    @NotBlank
     private String userEmail;
 
+    @NotBlank
     private String text;
 
     private List<String> tags;
