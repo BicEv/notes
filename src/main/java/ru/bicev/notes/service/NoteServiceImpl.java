@@ -99,7 +99,8 @@ public class NoteServiceImpl implements NoteService {
     @Override
     public List<NoteDto> findByAllTags(List<String> tags, String email) {
         logger.info("Searched notes with tags: {} for user={}", tags, email);
-        return findNotes(user -> noteRepository.findByAllTags(tags, tags.size(), user), email);
+        List<String> upperTags = tags.stream().map(String::toUpperCase).collect(Collectors.toList());
+        return findNotes(user -> noteRepository.findByAllTags(upperTags, upperTags.size(), user), email);
     }
 
     @Transactional(readOnly = true)
@@ -114,7 +115,7 @@ public class NoteServiceImpl implements NoteService {
     @Override
     public List<NoteDto> findByTagPart(String tagPart, String email) {
         logger.info("Searched notes with tagPart: {} for user={}", tagPart, email);
-        return findNotes(user -> noteRepository.findByTagPart(tagPart, user), email);
+        return findNotes(user -> noteRepository.findByTagPart(tagPart.toUpperCase(), user), email);
     }
 
     @Transactional(readOnly = true)
