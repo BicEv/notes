@@ -32,7 +32,7 @@ public class NoteController {
     }
 
     @PostMapping
-    public ResponseEntity<NoteDto> createNote(@Valid @RequestBody NoteDto noteDto) {
+    public ResponseEntity<NoteDto> createNote(@RequestBody NoteDto noteDto) {
         NoteDto createdNote = noteService.createNote(noteDto, getEmailFromPrincipal());
         return ResponseEntity.ok(createdNote);
     }
@@ -50,7 +50,7 @@ public class NoteController {
     }
 
     @DeleteMapping("{noteId}")
-    public ResponseEntity deleteNote(@PathVariable Long noteId) {
+    public ResponseEntity<Void> deleteNote(@PathVariable Long noteId) {
         noteService.deleteNote(noteId, getEmailFromPrincipal());
         return ResponseEntity.noContent().build();
 
