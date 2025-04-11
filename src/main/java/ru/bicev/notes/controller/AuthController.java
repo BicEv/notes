@@ -33,6 +33,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<UserDto> registerUser(@RequestParam String email, @RequestParam String password) {
         UserDto userDto = userService.registerUser(email, password);
+        logger.info("Registering user with email: {}", email);
         return new ResponseEntity<>(userDto, HttpStatus.CREATED);
     }
 
@@ -41,6 +42,7 @@ public class AuthController {
         authManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
 
         String token = jwtService.generateToken(email);
+        logger.info("User with email: {} logged in", email);
         return ResponseEntity.ok(token);
     }
 
