@@ -29,12 +29,20 @@ public class JwtFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String path = request.getServletPath();
-        if (path.equals("/api/users/login") || path.equals("/api/users/register")) {
+
+        //This one is for tests, because they don't works with getServletPath() with mockMvc
+        if (path.isEmpty()) {
+            path = request.getRequestURI();
+        }
+        
+        logger.debug("Path : {}", path);
+        if (path.equals("/api/users/register") || path.equals("/api/users/login")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         String authHeader = request.getHeader("Authorization");
+        logger.debug("Authorization header: {}", authHeader);
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwt = authHeader.substring(7);
             String email = jwtService.extractUsername(jwt);
