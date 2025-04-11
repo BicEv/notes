@@ -13,20 +13,15 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import ru.bicev.notes.dto.UserDto;
-import ru.bicev.notes.exception.UserNotFoundException;
 import ru.bicev.notes.service.JwtService;
-import ru.bicev.notes.service.UserService;
 
 public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
-    private final UserService userService;
     private static Logger logger = LoggerFactory.getLogger(JwtFilter.class);
 
-    public JwtFilter(JwtService jwtService, UserService userService) {
+    public JwtFilter(JwtService jwtService) {
         this.jwtService = jwtService;
-        this.userService = userService;
     }
 
     @Override
@@ -45,19 +40,14 @@ public class JwtFilter extends OncePerRequestFilter {
             String email = jwtService.extractUsername(jwt);
             logger.debug("JWT received: {}", jwt);
             if (jwtService.isTokenValid(jwt, email)) {
-                try {
-                    UserDto userDto = userService.getUserByEmail(email);
-                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(email, null,
-                            List.of());
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                    logger.info("User authenticated: {}", email);
-                } catch (UserNotFoundException e) {
-                    logger.warn("User not found for email in token: {}", email);
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "User not found");
-                    return;
-                }
+
+                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(email, null,
+                        List.of());
+                SecurityContextHolder.getContext().setAuthentication(auth);
+                logger.info("User authenticated: {}", email);
+
             } else {
-                logger.warn("Token is invalid: {} or userDto: {}", jwt, email);
+                logger.warn("Token is invalid: {}", jwt);
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token");
                 return;
             }

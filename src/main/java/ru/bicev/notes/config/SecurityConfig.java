@@ -19,7 +19,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import lombok.RequiredArgsConstructor;
 import ru.bicev.notes.security.JwtFilter;
 import ru.bicev.notes.service.JwtService;
-import ru.bicev.notes.service.UserService;
 import ru.bicev.notes.entity.User;
 import ru.bicev.notes.exception.UserNotFoundException;
 import ru.bicev.notes.repository.UserRepository;
@@ -30,13 +29,12 @@ import ru.bicev.notes.repository.UserRepository;
 public class SecurityConfig {
 
     private final JwtService jwtService;
-    private final UserService userService;
 
     private static Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
     @Bean
     public JwtFilter jwtFilter() {
-        return new JwtFilter(jwtService, userService);
+        return new JwtFilter(jwtService);
     }
 
     @Bean
