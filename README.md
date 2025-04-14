@@ -22,6 +22,9 @@ Maven
 git clone https://github.com/BicEv/notes.git
 cd notes
 
+Подставьте ваши PostgreSQL username/password и secretkey для jwt в app.properties
+
+
 Соберите проект с помощью Maven:
 ./mvnw clean install
 
