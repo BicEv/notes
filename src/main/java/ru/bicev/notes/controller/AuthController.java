@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import ru.bicev.notes.dto.UserDto;
+import ru.bicev.notes.exception.AccessDeniedException;
 import ru.bicev.notes.service.JwtService;
 import ru.bicev.notes.service.UserService;
 
@@ -39,6 +40,10 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestParam String email, @RequestParam String password) {
+        if (!userService.checkCredentials(email, password)) {
+            throw new AccessDeniedException("Invalid password");
+        }
+
         authManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
 
         String token = jwtService.generateToken(email);
