@@ -30,11 +30,12 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String path = request.getServletPath();
 
-        //This one is for tests, because they don't works with getServletPath() with mockMvc
+        // This one is for tests, because they don't works with getServletPath() with
+        // mockMvc
         if (path.isEmpty()) {
             path = request.getRequestURI();
         }
-        
+
         logger.debug("Path : {}", path);
         if (path.equals("/api/users/register") || path.equals("/api/users/login")) {
             filterChain.doFilter(request, response);
@@ -45,18 +46,24 @@ public class JwtFilter extends OncePerRequestFilter {
         logger.debug("Authorization header: {}", authHeader);
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwt = authHeader.substring(7);
-            String email = jwtService.extractUsername(jwt);
-            logger.debug("JWT received: {}", jwt);
-            if (jwtService.isTokenValid(jwt, email)) {
+            try {
+                String email = jwtService.extractUsername(jwt);
+                logger.debug("JWT received: {}", jwt);
+                if (jwtService.isTokenValid(jwt, email)) {
 
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(email, null,
-                        List.of());
-                SecurityContextHolder.getContext().setAuthentication(auth);
-                logger.info("User authenticated: {}", email);
+                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(email, null,
+                            List.of());
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                    logger.info("User authenticated: {}", email);
 
-            } else {
-                logger.warn("Token is invalid: {}", jwt);
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token");
+                } else {
+                    logger.warn("Token is invalid: {}", jwt);
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid or expired token");
+                    return;
+                }
+            } catch (IllegalArgumentException e) {
+                logger.error("Invalid token format", e);
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid token format");
                 return;
             }
         } else {
