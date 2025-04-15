@@ -37,7 +37,12 @@ public class JwtFilter extends OncePerRequestFilter {
         }
 
         logger.debug("Path : {}", path);
-        if (path.equals("/api/users/register") || path.equals("/api/users/login")) {
+        List<String> publicPaths = List.of(
+                "/api/users/register", "/api/users/login",
+                "/swagger-ui", "/swagger-ui.html",
+                "/v3/api-docs", "/swagger-resources", "/webjars");
+
+        if (publicPaths.stream().anyMatch(path::startsWith)) {
             filterChain.doFilter(request, response);
             return;
         }
