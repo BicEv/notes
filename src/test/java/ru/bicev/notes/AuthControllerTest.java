@@ -8,16 +8,21 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import ru.bicev.notes.config.TestSecurityConfig;
 import ru.bicev.notes.controller.AuthController;
 import ru.bicev.notes.controller.GlobalExceptionHandler;
+import ru.bicev.notes.dto.LoginRequest;
 import ru.bicev.notes.dto.UserDto;
 import ru.bicev.notes.exception.DuplicateUserException;
 import ru.bicev.notes.service.JwtService;
@@ -30,6 +35,9 @@ public class AuthControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @MockitoBean
     private UserService userService;
 
@@ -39,20 +47,24 @@ public class AuthControllerTest {
     @MockitoBean
     private JwtService jwtService;
 
-    private String email = "test@email.com";
-    private String password = "password";
+    LoginRequest loginRequest = new LoginRequest("test@email.com", "password");
     String token = "mocked-jwt-token";
-    private UserDto userDto = new UserDto(1L, email);
+    private UserDto userDto = new UserDto(1L, "test@email.com");
+    String expectedJson = """
+            {
+                "token": "mocked-jwt-token"
+            }
+            """;
 
     @Test
     public void registerUserSuccess() throws Exception {
-        when(userService.registerUser(email, password)).thenReturn(userDto);
+        when(userService.registerUser(loginRequest.getEmail(), loginRequest.getPassword())).thenReturn(userDto);
 
         mockMvc.perform(post("/api/users/register")
-                .param("email", email)
-                .param("password", password))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.email").value(email))
+                .andExpect(jsonPath("$.email").value(loginRequest.getEmail()))
                 .andExpect(jsonPath("$.id").value(1));
 
     }
@@ -62,33 +74,35 @@ public class AuthControllerTest {
         when(authenticationManager.authenticate(any()))
                 .thenReturn(mock(Authentication.class));
 
-        when(jwtService.generateToken(email)).thenReturn(token);
+        when(jwtService.generateToken(loginRequest.getEmail())).thenReturn(token);
 
         mockMvc.perform(post("/api/users/login")
-                .param("email", email)
-                .param("password", password))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isOk())
-                .andExpect(content().string(token));
+                .andExpect(content().json(expectedJson));
     }
 
     @Test
     public void duplicateUserExceptionTest() throws Exception {
-        when(userService.registerUser(email, password)).thenThrow(new DuplicateUserException("Email already in use"));
+        when(userService.registerUser(loginRequest.getEmail(), loginRequest.getPassword()))
+                .thenThrow(new DuplicateUserException("Email already in use"));
 
         mockMvc.perform(post("/api/users/register")
-                .param("email", email)
-                .param("password", password))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isConflict());
 
     }
 
     @Test
     public void genericExceptionTest() throws Exception {
-        when(userService.registerUser(email, password)).thenThrow(new RuntimeException("Exception"));
+        when(userService.registerUser(loginRequest.getEmail(), loginRequest.getPassword()))
+                .thenThrow(new RuntimeException("Exception"));
 
         mockMvc.perform(post("/api/users/register")
-                .param("email", email)
-                .param("password", password))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
                 .andExpect(status().isInternalServerError());
 
     }

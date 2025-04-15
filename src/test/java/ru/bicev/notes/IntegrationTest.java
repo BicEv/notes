@@ -13,6 +13,8 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import ru.bicev.notes.dto.JwtResponse;
+import ru.bicev.notes.dto.LoginRequest;
 import ru.bicev.notes.dto.NoteDto;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -33,6 +35,9 @@ public class IntegrationTest {
 
     private static Long savedNoteId;
     String[] tagsArray = { "tag1", "tag2" };
+    LoginRequest login = new LoginRequest("integrationTest@email.com", "password");
+    LoginRequest invalidLogin = new LoginRequest("notexisting@email.com", "notvalidpassword");
+    LoginRequest invalidPass = new LoginRequest("integrationTest@email.com", "notvalidpassword");
     private NoteDto noteDto = new NoteDto(null, null, "Integration note", List.of("First tag", "Second tag"));
     private NoteDto updateNoteDto = new NoteDto(null, null, "Updated note", List.of("First tag"));
 
@@ -40,8 +45,8 @@ public class IntegrationTest {
     @Order(1)
     public void testRegisterUser() throws Exception {
         mockMvc.perform(post("/api/users/register")
-                .param("email", "integrationTest@email.com")
-                .param("password", "password"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(login)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.email").value("integrationTest@email.com"));
     }
@@ -50,8 +55,8 @@ public class IntegrationTest {
     @Test
     public void testLoginUser() throws Exception {
         mockMvc.perform(post("/api/users/login")
-                .param("email", "integrationTest@email.com")
-                .param("password", "password"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(login)))
                 .andExpect(status().isOk());
 
     }
@@ -173,8 +178,8 @@ public class IntegrationTest {
     @Order(14)
     public void testRegisterUser_shouldReturn409() throws Exception {
         mockMvc.perform(post("/api/users/register")
-                .param("email", "integrationTest@email.com")
-                .param("password", "password"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidPass)))
                 .andExpect(status().isConflict());
     }
 
@@ -182,8 +187,8 @@ public class IntegrationTest {
     @Test
     public void testLoginUser_shouldReturn403() throws Exception {
         mockMvc.perform(post("/api/users/login")
-                .param("email", "integrationTest@email.com")
-                .param("password", "NotMatchingPass"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidPass)))
                 .andExpect(status().isForbidden());
 
     }
@@ -192,8 +197,8 @@ public class IntegrationTest {
     @Test
     public void testLoginUser_shouldReturn404() throws Exception {
         mockMvc.perform(post("/api/users/login")
-                .param("email", "notvalid@email.com")
-                .param("password", "NotMatchingPass"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidLogin)))
                 .andExpect(status().isNotFound());
 
     }
@@ -217,20 +222,23 @@ public class IntegrationTest {
     @Order(19)
     public void testInvalidNote_shouldReturn500() throws Exception {
         mockMvc.perform(post("/api/notes")
-        .header("Authorization", "Bearer " + obtainJwt("integrationTest@email.com", "password"))
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(objectMapper.writeValueAsString("nothing")))
-        .andExpect(status().isInternalServerError());
+                .header("Authorization", "Bearer " + obtainJwt("integrationTest@email.com", "password"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString("nothing")))
+                .andExpect(status().isInternalServerError());
     }
 
     private String obtainJwt(String email, String password) throws Exception {
 
         MvcResult result = mockMvc.perform(post("/api/users/login")
-                .param("email", email).param("password", password))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(login)))
                 .andExpect(status().isOk())
                 .andReturn();
-        String token = result.getResponse().getContentAsString();
-        System.out.println("JWT: " + token);
+                
+        String json = result.getResponse().getContentAsString();
+        JwtResponse jwtResponse = objectMapper.readValue(json, JwtResponse.class);
+        String token = jwtResponse.getToken();
         return token;
     }
 }
