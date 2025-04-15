@@ -8,9 +8,12 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import jakarta.validation.Valid;
+import ru.bicev.notes.dto.JwtResponse;
+import ru.bicev.notes.dto.LoginRequest;
 import ru.bicev.notes.dto.UserDto;
 import ru.bicev.notes.exception.AccessDeniedException;
 import ru.bicev.notes.service.JwtService;
@@ -32,23 +35,25 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserDto> registerUser(@RequestParam String email, @RequestParam String password) {
-        UserDto userDto = userService.registerUser(email, password);
-        logger.info("Registering user with email: {}", email);
+    public ResponseEntity<UserDto> registerUser(@Valid @RequestBody LoginRequest loginRequest) {
+        UserDto userDto = userService.registerUser(loginRequest.getEmail(), loginRequest.getPassword());
+        logger.info("Registering user with email: {}", loginRequest.getEmail());
         return new ResponseEntity<>(userDto, HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestParam String email, @RequestParam String password) {
-        if (!userService.checkCredentials(email, password)) {
+    public ResponseEntity<JwtResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
+        if (!userService.checkCredentials(loginRequest.getEmail(), loginRequest.getPassword())) {
             throw new AccessDeniedException("Invalid password");
         }
 
-        authManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
+        authManager.authenticate(
+                new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
 
-        String token = jwtService.generateToken(email);
-        logger.info("User with email: {} logged in", email);
-        return ResponseEntity.ok(token);
+        String token = jwtService.generateToken(loginRequest.getEmail());
+        JwtResponse jwt = new JwtResponse(token);
+        logger.info("User with email: {} logged in", loginRequest.getEmail());
+        return ResponseEntity.ok(jwt);
     }
 
 }
