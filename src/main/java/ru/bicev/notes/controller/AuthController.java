@@ -7,11 +7,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
+import ru.bicev.notes.dto.ErrorResponse;
 import ru.bicev.notes.dto.JwtResponse;
 import ru.bicev.notes.dto.LoginRequest;
 import ru.bicev.notes.dto.UserDto;
@@ -34,15 +40,31 @@ public class AuthController {
         this.jwtService = jwtService;
     }
 
+    @Operation(summary = "User's registration")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Success registration"),
+            @ApiResponse(responseCode = "409", description = "Email already in use",
+        content = @Content(mediaType = "application/json",
+            schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping("/register")
-    public ResponseEntity<UserDto> registerUser(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<UserDto> registerUser(
+            @Valid @RequestBody LoginRequest loginRequest) {
         UserDto userDto = userService.registerUser(loginRequest.getEmail(), loginRequest.getPassword());
         logger.info("Registering user with email: {}", loginRequest.getEmail());
         return new ResponseEntity<>(userDto, HttpStatus.CREATED);
     }
 
+    @Operation(summary = "User's authorization", description = "Returns Json web token if authorization was success")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Success login"),
+            @ApiResponse(responseCode = "403", description = "Invalid credentials",
+            content = @Content(mediaType = "application/json",
+            schema = @Schema(implementation = ErrorResponse.class)))
+    })
     @PostMapping("/login")
-    public ResponseEntity<JwtResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<JwtResponse> login(
+            @Valid @RequestBody LoginRequest loginRequest) {
         if (!userService.checkCredentials(loginRequest.getEmail(), loginRequest.getPassword())) {
             throw new AccessDeniedException("Invalid password");
         }
