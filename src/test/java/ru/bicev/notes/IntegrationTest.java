@@ -68,7 +68,7 @@ public class IntegrationTest {
                 .header("Authorization", "Bearer " + obtainJwt("integrationTest@email.com", "password"))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(noteDto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.text").value(noteDto.getText()))
                 .andReturn();
 
@@ -229,13 +229,13 @@ public class IntegrationTest {
     }
 
     private String obtainJwt(String email, String password) throws Exception {
-
+        LoginRequest loginReq = new LoginRequest(email, password);
         MvcResult result = mockMvc.perform(post("/api/users/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(login)))
+                .content(objectMapper.writeValueAsString(loginReq)))
                 .andExpect(status().isOk())
                 .andReturn();
-                
+
         String json = result.getResponse().getContentAsString();
         JwtResponse jwtResponse = objectMapper.readValue(json, JwtResponse.class);
         String token = jwtResponse.getToken();
