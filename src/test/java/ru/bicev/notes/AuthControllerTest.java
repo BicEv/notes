@@ -32,79 +32,80 @@ import ru.bicev.notes.service.UserService;
 @Import({ TestSecurityConfig.class, GlobalExceptionHandler.class })
 public class AuthControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+        @Autowired
+        private ObjectMapper objectMapper;
 
-    @MockitoBean
-    private UserService userService;
+        @MockitoBean
+        private UserService userService;
 
-    @MockitoBean
-    private AuthenticationManager authenticationManager;
+        @MockitoBean
+        private AuthenticationManager authenticationManager;
 
-    @MockitoBean
-    private JwtService jwtService;
+        @MockitoBean
+        private JwtService jwtService;
 
-    LoginRequest loginRequest = new LoginRequest("test@email.com", "password");
-    String token = "mocked-jwt-token";
-    private UserDto userDto = new UserDto(1L, "test@email.com");
-    String expectedJson = """
-            {
-                "token": "mocked-jwt-token"
-            }
-            """;
+        String token = "mocked-jwt-token";
+        private UserDto userDto = new UserDto(1L, "test@email.com");
+        private LoginRequest loginRequest = new LoginRequest("test@email.com", "password");
+        String expectedJson = """
+                        {
+                            "token": "mocked-jwt-token"
+                        }
+                        """;
 
-    @Test
-    public void registerUserSuccess() throws Exception {
-        when(userService.registerUser(loginRequest.getEmail(), loginRequest.getPassword())).thenReturn(userDto);
+        @Test
+        public void registerUserSuccess() throws Exception {
+                when(userService.registerUser(loginRequest.getEmail(), loginRequest.getPassword())).thenReturn(userDto);
 
-        mockMvc.perform(post("/api/users/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.email").value(loginRequest.getEmail()))
-                .andExpect(jsonPath("$.id").value(1));
+                mockMvc.perform(post("/api/users/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(loginRequest)))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.email").value(loginRequest.getEmail()))
+                                .andExpect(jsonPath("$.id").value(1));
 
-    }
+        }
 
-    @Test
-    void testLogin_returnsJwtToken() throws Exception {
-        when(authenticationManager.authenticate(any()))
-                .thenReturn(mock(Authentication.class));
+        @Test
+        void testLogin_returnsJwtToken() throws Exception {
+                when(authenticationManager.authenticate(any()))
+                                .thenReturn(mock(Authentication.class));
+                when(userService.checkCredentials(loginRequest.getEmail(), loginRequest.getPassword()))
+                                .thenReturn(true);
+                when(jwtService.generateToken(loginRequest.getEmail())).thenReturn(token);
 
-        when(jwtService.generateToken(loginRequest.getEmail())).thenReturn(token);
+                mockMvc.perform(post("/api/users/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(loginRequest)))
+                                .andExpect(status().isOk())
+                                .andExpect(content().json(expectedJson));
+        }
 
-        mockMvc.perform(post("/api/users/login")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isOk())
-                .andExpect(content().json(expectedJson));
-    }
+        @Test
+        public void duplicateUserExceptionTest() throws Exception {
+                when(userService.registerUser(loginRequest.getEmail(), loginRequest.getPassword()))
+                                .thenThrow(new DuplicateUserException("Email already in use"));
 
-    @Test
-    public void duplicateUserExceptionTest() throws Exception {
-        when(userService.registerUser(loginRequest.getEmail(), loginRequest.getPassword()))
-                .thenThrow(new DuplicateUserException("Email already in use"));
+                mockMvc.perform(post("/api/users/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(loginRequest)))
+                                .andExpect(status().isConflict());
 
-        mockMvc.perform(post("/api/users/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isConflict());
+        }
 
-    }
+        @Test
+        public void genericExceptionTest() throws Exception {
+                when(userService.registerUser(loginRequest.getEmail(), loginRequest.getPassword()))
+                                .thenThrow(new RuntimeException("Exception"));
 
-    @Test
-    public void genericExceptionTest() throws Exception {
-        when(userService.registerUser(loginRequest.getEmail(), loginRequest.getPassword()))
-                .thenThrow(new RuntimeException("Exception"));
+                mockMvc.perform(post("/api/users/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(loginRequest)))
+                                .andExpect(status().isInternalServerError());
 
-        mockMvc.perform(post("/api/users/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isInternalServerError());
-
-    }
+        }
 
 }

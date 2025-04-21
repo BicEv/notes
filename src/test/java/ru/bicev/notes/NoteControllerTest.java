@@ -58,7 +58,7 @@ public class NoteControllerTest {
         mockMvc.perform(post("/api/notes")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(noteDto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andDo(print())
                 .andExpect(jsonPath("$.text").value("Test note"))
                 .andExpect(jsonPath("$.id").value(1));
