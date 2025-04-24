@@ -83,3 +83,12 @@ http://localhost:8080/swagger-ui/index.html
 Аутентификация:
 Для запросов, требующих авторизации, необходимо нажать кнопку Authorize и ввести JWT токен:
 Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6...
+
+Проект доступен в виде образа Docker. Для удобства запуска контейнеров с приложением и базой данных, можно использовать предоставленный файл `docker-compose.yml`.
+Запуск с помощью Docker Compose:
+Чтобы запустить приложение, выполните следующие шаги:
+1. Скачайте образ: docker pull bicev/notes-app:latest
+2. Используйте `docker-compose.yml` для автоматического запуска приложения и базы данных PostgreSQL: docker-compose up
+
+Образ доступен на Docker Hub: [bicev/notes-app:latest](https://hub.docker.com/r/bicev/notes-app)
+
